@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+
+{% block title %}Figure 1.6 Recreation - CNN Visualization{% endblock %}
+
+{% block extra_head %}
+<style>
+.figure-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 15px;
+    padding: 30px;
+    margin: 20px 0;
+}
+
+.layer-representation {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.layer-representation:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.feature-map {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    margin: 5px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.feature-map:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.feature-map.active {
+    border: 3px solid #ffd700;
+    transform: scale(1.1);
+}
+
+.original-input {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
+}
+
+.classification-output {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.confidence-bar {
+    height: 20px;
+    background: linear-gradient(to right, #4CAF50, #8BC34A);
+    border-radius: 10px;
+    margin: 5px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.confidence-value {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.connection-line {
+    stroke: #666;
+    stroke-width: 1;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.connection-line.active {
+    stroke: #ffd700;
+    stroke-width: 2;
+    opacity: 1;
+}
+
+.layer-info-panel {
+    background: rgba(255,255,255,0.95);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-chart-line me-3"></i>Figure 1.6 Recreation</h2>
+            <p class="lead text-muted">
+                Interactive recreation of "Data representations learned by a digit-classification model"
+                adapted for waste classification CNN
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Figure 1.6 Visualization -->
+    <div class="row">
+        <div class="col-12">
+            <div class="figure-container">
+                <h4 class="text-center mb-4">
+                    Data Representations Learned by Waste Classification CNN
+                </h4>
+
+                <!-- Interactive Figure Layout -->
+                <div class="row align-items-center justify-content-center">
+                    <!-- Original Input -->
+                    <div class="col-auto text-center">
+                        <div class="original-input" onclick="highlightInput()">
+                            <div>
+                                <i class="fas fa-image fa-2x mb-2"></i><br>
+                                Original<br>Input
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-2">224×224×3</small>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="col-auto">
+                        <i class="fas fa-arrow-right fa-2x text-muted"></i>
+                    </div>
+
+                    <!-- Layer 1 Representations -->
+                    <div class="col-auto text-center">
+                        <div class="layer-representation" data-layer="1">
+                            <h6>Layer 1<br>representations</h6>
+                            <div class="d-flex flex-wrap justify-content-center" style="width: 150px;">
+                                {% for i in range(4) %}
+                                <div class="feature-map"
+                                     onclick="selectFeatureMap(1, {{ i }})"
+                                     data-layer="1" data-map="{{ i }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">56×56×32</small>
+                        </div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="col-auto">
+                        <i class="fas fa-arrow-right fa-2x text-muted"></i>
+                    </div>
+
+                    <!-- Layer 2 Representations -->
+                    <div class="col-auto text-center">
+                        <div class="layer-representation" data-layer="2">
+                            <h6>Layer 2<br>representations</h6>
+                            <div class="d-flex flex-wrap justify-content-center" style="width: 150px;">
+                                {% for i in range(4) %}
+                                <div class="feature-map"
+                                     onclick="selectFeatureMap(2, {{ i }})"
+                                     data-layer="2" data-map="{{ i }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">28×28×64</small>
+                        </div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="col-auto">
+                        <i class="fas fa-arrow-right fa-2x text-muted"></i>
+                    </div>
+
+                    <!-- Layer 3 Representations -->
+                    <div class="col-auto text-center">
+                        <div class="layer-representation" data-layer="3">
+                            <h6>Layer 3<br>representations</h6>
+                            <div class="d-flex flex-wrap justify-content-center" style="width: 150px;">
+                                {% for i in range(4) %}
+                                <div class="feature-map"
+                                     onclick="selectFeatureMap(3, {{ i }})"
+                                     data-layer="3" data-map="{{ i }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">14×14×128</small>
+                        </div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="col-auto">
+                        <i class="fas fa-arrow-right fa-2x text-muted"></i>
+                    </div>
+
+                    <!-- Final Output -->
+                    <div class="col-auto text-center">
+                        <div class="classification-output" style="width: 200px;">
+                            <h6>Layer 4<br>representations<br>(final output)</h6>
+                            {% for result in classification_results[0].predictions %}
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small>{{ result.class_name.title() }}</small>
+                                    <small>{{ "%.3f"|format(result.confidence) }}</small>
+                                </div>
+                                <div class="confidence-bar" style="width: {{ result.confidence * 100 }}%;">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Layer Information Panel -->
+    <div class="row">
+        <div class="col-12">
+            <div class="layer-info-panel" id="layerInfoPanel">
+                <h5 id="layerTitle">Click on any layer to explore</h5>
+                <div id="layerContent">
+                    <p class="text-muted">
+                        Select different layers or feature maps above to see detailed information
+                        about what features they detect and how they contribute to the final classification.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Analysis -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-eye me-2"></i>Layer 1: Edge Detection</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Vertical edges</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Horizontal edges</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Corners and angles</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Basic textures</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-shapes me-2"></i>Layer 2: Pattern Recognition</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-check-circle text-warning me-2"></i>Circular shapes</li>
+                        <li><i class="fas fa-check-circle text-warning me-2"></i>Rectangular patterns</li>
+                        <li><i class="fas fa-check-circle text-warning me-2"></i>Texture combinations</li>
+                        <li><i class="fas fa-check-circle text-warning me-2"></i>Object parts</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-cube me-2"></i>Layer 3: Object Features</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-check-circle text-danger me-2"></i>Bottle shapes</li>
+                        <li><i class="fas fa-check-circle text-danger me-2"></i>Container patterns</li>
+                        <li><i class="fas fa-check-circle text-danger me-2"></i>Material textures</li>
+                        <li><i class="fas fa-check-circle text-danger me-2"></i>Object semantics</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Details -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-info-circle me-2"></i>Technical Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Data Flow</h6>
+                            <p class="small text-muted">
+                                Input (224×224×3) → Conv Layers → Pooling → Dense → Classification (5 classes)
+                            </p>
+                            <h6>Key Insights</h6>
+                            <ul class="small text-muted">
+                                <li>Spatial dimensions decrease through layers</li>
+                                <li>Feature complexity increases</li>
+                                <li>Channel depth grows significantly</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Layer Progression</h6>
+                            <p class="small text-muted">
+                                Each layer builds upon the previous, creating increasingly abstract representations
+                                of the input waste image until final classification.
+                            </p>
+                            <h6>Classification Output</h6>
+                            <p class="small text-muted">
+                                Final layer maps learned features to waste categories with confidence scores.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Layer information data
+const layerInfo = {
+    input: {
+        title: "Original Input Image",
+        content: `
+            <p><strong>Shape:</strong> 224×224×3 RGB image</p>
+            <p><strong>Purpose:</strong> Raw waste image input to the CNN</p>
+            <p><strong>Details:</strong> The original image is preprocessed (resized and normalized)
+            before being fed into the network. Each pixel contains RGB color information.</p>
+        `
+    },
+    1: {
+        title: "Layer 1: Edge Detection & Basic Features",
+        content: `
+            <p><strong>Shape:</strong> 56×56×32 feature maps</p>
+            <p><strong>Purpose:</strong> Detect basic visual patterns and edges</p>
+            <p><strong>Features Detected:</strong></p>
+            <ul>
+                <li>Vertical and horizontal edges</li>
+                <li>Corners and angles</li>
+                <li>Basic textures and gradients</li>
+                <li>Simple geometric patterns</li>
+            </ul>
+            <p><strong>Example:</strong> Edges of a plastic bottle, texture of organic waste surface</p>
+        `
+    },
+    2: {
+        title: "Layer 2: Pattern Combinations & Shapes",
+        content: `
+            <p><strong>Shape:</strong> 28×28×64 feature maps</p>
+            <p><strong>Purpose:</strong> Combine basic features into recognizable patterns</p>
+            <p><strong>Features Detected:</strong></p>
+            <ul>
+                <li>Circular and rectangular shapes</li>
+                <li>Pattern combinations</li>
+                <li>Texture variations</li>
+                <li>Object parts and components</li>
+            </ul>
+            <p><strong>Example:</strong> Bottle cap shape, container body, label areas</p>
+        `
+    },
+    3: {
+        title: "Layer 3: High-Level Object Features",
+        content: `
+            <p><strong>Shape:</strong> 14×14×128 feature maps</p>
+            <p><strong>Purpose:</strong> Recognize complex object features and materials</p>
+            <p><strong>Features Detected:</strong></p>
+            <ul>
+                <li>Complete object shapes (bottles, cans, etc.)</li>
+                <li>Material properties (plastic, metal, glass)</li>
+                <li>Semantic features</li>
+                <li>Context and relationships</li>
+            </ul>
+            <p><strong>Example:</strong> Plastic bottle recognition, metal can identification</p>
+        `
+    }
+};
+
+function highlightInput() {
+    showLayerInfo('input');
+    // Reset all selections
+    document.querySelectorAll('.feature-map').forEach(map => {
+        map.classList.remove('active');
+    });
+}
+
+function selectFeatureMap(layer, mapIndex) {
+    // Remove active class from all feature maps
+    document.querySelectorAll('.feature-map').forEach(map => {
+        map.classList.remove('active');
+    });
+
+    // Add active class to selected map
+    event.target.classList.add('active');
+
+    // Show layer information
+    showLayerInfo(layer);
+
+    // Add visual feedback
+    animateSelection(event.target);
+}
+
+function showLayerInfo(layer) {
+    const panel = document.getElementById('layerInfoPanel');
+    const title = document.getElementById('layerTitle');
+    const content = document.getElementById('layerContent');
+
+    if (layerInfo[layer]) {
+        title.innerHTML = layerInfo[layer].title;
+        content.innerHTML = layerInfo[layer].content;
+
+        // Animate panel
+        panel.style.transform = 'scale(0.95)';
+        panel.style.opacity = '0.7';
+        setTimeout(() => {
+            panel.style.transform = 'scale(1)';
+            panel.style.opacity = '1';
+        }, 150);
+    }
+}
+
+function animateSelection(element) {
+    // Create ripple effect
+    element.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+        element.style.transform = 'scale(1.1)';
+    }, 200);
+}
+
+// Initialize with input selection
+document.addEventListener('DOMContentLoaded', function() {
+    highlightInput();
+
+    // Add hover effects to layer representations
+    document.querySelectorAll('.layer-representation').forEach(layer => {
+        layer.addEventListener('mouseenter', function() {
+            this.style.borderLeft = '4px solid #007bff';
+        });
+
+        layer.addEventListener('mouseleave', function() {
+            this.style.borderLeft = 'none';
+        });
+    });
+
+    // Auto-demo functionality
+    let demoInterval;
+    function startDemo() {
+        let currentLayer = 1;
+        let currentMap = 0;
+
+        demoInterval = setInterval(() => {
+            if (currentLayer <= 3) {
+                const maps = document.querySelectorAll(`[data-layer="${currentLayer}"]`);
+                if (currentMap < maps.length) {
+                    maps[currentMap].click();
+                    currentMap++;
+                } else {
+                    currentLayer++;
+                    currentMap = 0;
+                }
+            } else {
+                clearInterval(demoInterval);
+                highlightInput(); // Reset to input
+            }
+        }, 2000);
+    }
+
+    // Add demo button functionality
+    const demoButton = document.createElement('button');
+    demoButton.innerHTML = '<i class="fas fa-play me-2"></i>Auto Demo';
+    demoButton.className = 'btn btn-outline-primary btn-sm float-end';
+    demoButton.onclick = startDemo;
+    document.querySelector('.figure-container h4').appendChild(demoButton);
+});
+</script>
+{% endblock %}

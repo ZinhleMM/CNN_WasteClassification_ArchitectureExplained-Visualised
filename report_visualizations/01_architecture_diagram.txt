@@ -1,0 +1,41 @@
+
+CNN ARCHITECTURE FOR WASTE CLASSIFICATION
+==========================================
+
+Input Image          MobileNetV2         Global Avg Pool      Dense Layer        Classification
+(224×224×3)          Base Model          (7×7×1280→1280)      (1280→128)         (128→5)
+                     (ImageNet)
+     │                    │                     │                 │                 │
+     │                    │                     │                 │                 │
+  ┌──▼──┐              ┌──▼──┐               ┌──▼──┐           ┌──▼──┐           ┌──▼──┐
+  │     │              │     │               │     │           │     │           │     │
+  │ RGB │──────────────▶│Conv │──────────────▶│Pool │──────────▶│ReLU │──────────▶│Soft │
+  │Image│              │Layers│               │Layer│           │Layer│           │ max │
+  │     │              │     │               │     │           │     │           │     │
+  └─────┘              └─────┘               └─────┘           └─────┘           └─────┘
+     │                    │                     │                 │                 │
+  Aerosol               Feature              Feature           Combined            Waste
+ Container              Extraction           Vector           Features          Categories
+                        (2.26M params)        (Spatial        (164K params)    (645 params)
+                                             Reduction)
+
+LAYER BREAKDOWN:
+================
+Layer 1: Input          → Normalize RGB values [0-1]
+Layer 2: MobileNetV2    → Extract hierarchical features
+Layer 3: GlobalAvgPool  → Reduce spatial dimensions
+Layer 4: Dropout (0.2)  → Regularization
+Layer 5: Dense (128)    → Feature combination
+Layer 6: Dropout (0.2)  → Final regularization
+Layer 7: Dense (5)      → Classification output
+
+PARAMETER DISTRIBUTION:
+=======================
+Total Parameters: 2,422,000
+├─ MobileNetV2: 2,257,984 (93.2%) - Frozen
+├─ Dense Layer: 164,608   (6.8%)  - Trainable
+└─ Output Layer: 645      (0.03%) - Trainable
+
+DATA FLOW:
+==========
+Aerosol Image → [224×224×3] → MobileNetV2 → [7×7×1280] → Pool → [1280] → Dense → [128] → Classify → [5]

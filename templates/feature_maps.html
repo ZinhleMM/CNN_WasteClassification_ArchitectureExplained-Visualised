@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Feature Maps - CNN Visualization{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-layer-group me-3"></i>Feature Maps Visualization</h2>
+            <p class="lead text-muted">
+                Explore how features evolve through the CNN layers
+            </p>
+        </div>
+    </div>
+
+    <!-- Feature Map Grid -->
+    <div class="row">
+        {% for layer in feature_layers %}
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ layer.name }}</h5>
+                    <small class="text-muted">{{ layer.description }}</small>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="feature-map-grid">
+                                {% for map_data in layer.sample_maps %}
+                                <div class="feature-map-tile" onclick="selectFeatureMap({{ loop.index0 }})">
+                                    <div class="map-visualization">
+                                        <canvas class="feature-canvas" width="80" height="80"
+                                                data-map="{{ map_data|tojson }}"></canvas>
+                                    </div>
+                                    <small>Filter {{ loop.index }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Detected Features:</h6>
+                            <ul class="list-unstyled">
+                                {% for feature in layer.features %}
+                                <li><i class="fas fa-check-circle text-success me-2"></i>{{ feature }}</li>
+                                {% endfor %}
+                            </ul>
+                            <div class="mt-3">
+                                <strong>Shape:</strong> {{ layer.shape|join('×') }}<br>
+                                <strong>Filters:</strong> {{ layer.shape[2] if layer.shape|length > 2 else 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.feature-map-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.feature-map-tile {
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.feature-map-tile:hover {
+    background-color: rgba(0,123,255,0.1);
+    transform: scale(1.05);
+}
+
+.feature-canvas {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Render feature maps on canvases
+document.addEventListener('DOMContentLoaded', function() {
+    const canvases = document.querySelectorAll('.feature-canvas');
+
+    canvases.forEach(canvas => {
+        const mapData = JSON.parse(canvas.dataset.map);
+        renderFeatureMap(canvas, mapData);
+    });
+});
+
+function renderFeatureMap(canvas, mapData) {
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const cellWidth = width / mapData.length;
+    const cellHeight = height / mapData[0].length;
+
+    for (let i = 0; i < mapData.length; i++) {
+        for (let j = 0; j < mapData[i].length; j++) {
+            const value = mapData[i][j];
+            const intensity = Math.floor(value * 255);
+
+            ctx.fillStyle = `rgb(${intensity}, ${intensity}, ${255 - intensity})`;
+            ctx.fillRect(j * cellWidth, i * cellHeight, cellWidth, cellHeight);
+        }
+    }
+}
+
+function selectFeatureMap(index) {
+    console.log('Selected feature map:', index);
+    // Add selection logic here
+}
+</script>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}CNN Visualization Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="jumbotron bg-gradient-primary text-white p-5 rounded">
+                <h1 class="display-4">
+                    <i class="fas fa-brain me-3"></i>CNN Visualization Toolkit
+                </h1>
+                <p class="lead">
+                    Comprehensive visualization of CNN architecture, layers, and transformations
+                    for waste classification models. Recreating Figure 1.6 with interactive analysis.
+                </p>
+                <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+                <p>
+                    Explore how your waste classification CNN processes images through successive layers,
+                    from basic edge detection to complex object recognition.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle me-2"></i>Model Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Architecture</h6>
+                            <p class="text-muted">{{ model_info.architecture }}</p>
+
+                            <h6>Input Shape</h6>
+                            <p class="text-muted">{{ model_info.input_shape[0] }}×{{ model_info.input_shape[1] }}×{{ model_info.input_shape[2] }} RGB</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Classes</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for class_name in model_info.class_names %}
+                                <span class="badge bg-secondary">{{ class_name.title() }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <h6 class="mt-3">Total Parameters</h6>
+                            <p class="text-muted">{{ "{:,}".format(model_info.total_params) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visualization Options -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3><i class="fas fa-chart-bar me-2"></i>Visualization Options</h3>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Architecture Visualization -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-sitemap fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">Architecture</h5>
+                    <p class="card-text">
+                        Explore the complete CNN architecture with layer-by-layer breakdown
+                        and parameter analysis.
+                    </p>
+                    <a href="{{ url_for('architecture') }}" class="btn btn-primary">
+                        View Architecture
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Maps -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-layer-group fa-3x text-success"></i>
+                    </div>
+                    <h5 class="card-title">Feature Maps</h5>
+                    <p class="card-text">
+                        Visualize actual feature maps from trained model layers and see
+                        how features evolve through the network.
+                    </p>
+                    <a href="{{ url_for('feature_maps') }}" class="btn btn-success">
+                        Explore Features
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Figure 1.6 Recreation -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-chart-line fa-3x text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Figure 1.6 Recreation</h5>
+                    <p class="card-text">
+                        Interactive recreation of the famous Figure 1.6 showing data
+                        representations learned by your CNN.
+                    </p>
+                    <a href="{{ url_for('figure_1_6') }}" class="btn btn-warning">
+                        View Figure 1.6
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- CNN Operations -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-cogs fa-3x text-info"></i>
+                    </div>
+                    <h5 class="card-title">CNN Operations</h5>
+                    <p class="card-text">
+                        Learn how convolution and pooling operations work with
+                        interactive demonstrations and examples.
+                    </p>
+                    <a href="{{ url_for('operations') }}" class="btn btn-info">
+                        Learn Operations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sample Images -->
+    {% if sample_images %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3><i class="fas fa-images me-2"></i>Sample Images</h3>
+            <p class="text-muted">Available images for visualization and analysis</p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for image in sample_images[:6] %}
+        <div class="col-md-4 col-lg-2 mb-3">
+            <div class="card">
+                <img src="{{ url_for('uploaded_file', filename=image.filename) }}"
+                     class="card-img-top" alt="{{ image.filename }}"
+                     style="height: 150px; object-fit: cover;">
+                <div class="card-body p-2">
+                    <h6 class="card-title small">{{ image.filename[:20] }}...</h6>
+                    <p class="card-text small text-muted">
+                        {{ image.size_kb }} KB • {{ image.type.title() }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Quick Start Guide -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-rocket me-2"></i>Quick Start Guide</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>1. Explore Architecture</h6>
+                            <p class="small text-muted">
+                                Start by examining the CNN architecture to understand
+                                the model structure and layer configurations.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>2. View Figure 1.6</h6>
+                            <p class="small text-muted">
+                                Experience the interactive recreation of Figure 1.6
+                                showing how data representations evolve through layers.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>3. Analyze Features</h6>
+                            <p class="small text-muted">
+                                Dive deep into feature maps to see what patterns
+                                and features each layer learns to detect.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Add hover effects to feature cards
+document.addEventListener('DOMContentLoaded', function() {
+    const featureCards = document.querySelectorAll('.feature-card');
+
+    featureCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        });
+    });
+});
+</script>
+{% endblock %}

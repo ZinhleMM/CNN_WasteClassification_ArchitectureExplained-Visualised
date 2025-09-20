@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}CNN Architecture - Visualization{% endblock %}
+
+{% block extra_head %}
+<style>
+.architecture-flow {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 30px;
+    color: white;
+    margin: 20px 0;
+}
+
+.layer-block {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.layer-block:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.6);
+    transform: translateY(-2px);
+}
+
+.layer-block.active {
+    background: rgba(255,215,0,0.3);
+    border-color: #ffd700;
+}
+
+.parameter-badge {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    margin: 2px;
+    display: inline-block;
+}
+
+.flow-arrow {
+    font-size: 24px;
+    color: #ffd700;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.architecture-stats {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.stat-card {
+    background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin: 10px;
+}
+
+.layer-details {
+    background: rgba(255,255,255,0.95);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-sitemap me-3"></i>CNN Architecture</h2>
+            <p class="lead text-muted">
+                Explore the complete architecture of your waste classification CNN model
+            </p>
+        </div>
+    </div>
+
+    <!-- Architecture Overview -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="architecture-flow">
+                <h4 class="text-center mb-4">
+                    <i class="fas fa-brain me-2"></i>{{ model_info.architecture }}
+                </h4>
+
+                <!-- Layer Flow -->
+                <div class="layer-flow">
+                    {% for layer in model_info.layers %}
+                    <div class="layer-block" onclick="selectLayer({{ loop.index0 }})" data-layer="{{ loop.index0 }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h6 class="mb-1">{{ layer.name }}</h6>
+                                <small class="opacity-75">{{ layer.type }}</small>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="parameter-badge">
+                                    Shape: {{ layer.output_shape|join('×') }}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="parameter-badge">
+                                    {% if layer.params > 0 %}
+                                    {{ "{:,}".format(layer.params) }} params
+                                    {% else %}
+                                    No params
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <i class="fas fa-info-circle fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not loop.last %}
+                    <div class="flow-arrow">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Statistics -->
+        <div class="col-lg-4">
+            <div class="architecture-stats">
+                <h5><i class="fas fa-chart-bar me-2"></i>Model Statistics</h5>
+
+                <div class="stat-card mb-3">
+                    <h6>Total Parameters</h6>
+                    <h4>{{ "{:,}".format(model_info.total_params) }}</h4>
+                </div>
+
+                <div class="stat-card mb-3">
+                    <h6>Number of Layers</h6>
+                    <h4>{{ model_info.layers|length }}</h4>
+                </div>
+
+                <div class="stat-card mb-3">
+                    <h6>Output Classes</h6>
+                    <h4>{{ model_info.num_classes }}</h4>
+                </div>
+
+                <div class="stat-card">
+                    <h6>Input Size</h6>
+                    <h4>{{ model_info.input_shape|join('×') }}</h4>
+                </div>
+            </div>
+
+            <!-- Class Information -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-tags me-2"></i>Classification Classes</h6>
+                </div>
+                <div class="card-body">
+                    {% for class_name in model_info.class_names %}
+                    <span class="badge bg-primary me-2 mb-2">{{ class_name.title() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Layer Details Panel -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="layer-details" id="layerDetails">
+                <h5 id="layerDetailTitle">Select a layer to view details</h5>
+                <div id="layerDetailContent">
+                    <p class="text-muted">
+                        Click on any layer above to see detailed information about its function,
+                        parameters, and role in the waste classification process.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Flow Visualization -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-stream me-2"></i>Data Flow Transformation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center text-center">
+                        {% for layer in model_info.layers %}
+                        <div class="col">
+                            <div class="small fw-bold">{{ layer.name }}</div>
+                            <div class="badge bg-secondary">{{ layer.output_shape|join('×') }}</div>
+                        </div>
+                        {% if not loop.last %}
+                        <div class="col-auto">
+                            <i class="fas fa-arrow-right text-muted"></i>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architecture Insights -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Design Insights</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Transfer Learning:</strong> Leverages pre-trained MobileNetV2 for efficient feature extraction
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Regularization:</strong> Dropout layers prevent overfitting
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Efficiency:</strong> Global average pooling reduces parameters
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Flexibility:</strong> Custom classification head for waste categories
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6><i class="fas fa-cogs me-2"></i>Technical Specifications</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Base Model:</strong><br>
+                            <small class="text-muted">MobileNetV2</small>
+                        </div>
+                        <div class="col-6">
+                            <strong>Optimizer:</strong><br>
+                            <small class="text-muted">Adam</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Loss Function:</strong><br>
+                            <small class="text-muted">Categorical Crossentropy</small>
+                        </div>
+                        <div class="col-6">
+                            <strong>Activation:</strong><br>
+                            <small class="text-muted">ReLU + Softmax</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Dropout Rate:</strong><br>
+                            <small class="text-muted">20%</small>
+                        </div>
+                        <div class="col-6">
+                            <strong>Pooling:</strong><br>
+                            <small class="text-muted">Global Average</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Layer detail information
+const layerDetails = [
+    {
+        title: "Input Layer",
+        content: `
+            <p><strong>Function:</strong> Receives the input image data</p>
+            <p><strong>Input Shape:</strong> 224×224×3 (RGB channels)</p>
+            <p><strong>Purpose:</strong> Entry point for waste images into the neural network</p>
+            <p><strong>Preprocessing:</strong> Images are resized to 224×224 pixels and normalized to [0,1] range</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                This layer defines the expected input format for the entire network.
+            </div>
+        `
+    },
+    {
+        title: "MobileNetV2 Base Model",
+        content: `
+            <p><strong>Function:</strong> Feature extraction using pre-trained weights</p>
+            <p><strong>Output Shape:</strong> 7×7×1280 feature maps</p>
+            <p><strong>Parameters:</strong> 2,257,984 (frozen during training)</p>
+            <p><strong>Purpose:</strong> Extracts rich visual features from ImageNet pre-training</p>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                Transfer learning allows the model to leverage features learned from millions of images.
+            </div>
+        `
+    },
+    {
+        title: "Global Average Pooling 2D",
+        content: `
+            <p><strong>Function:</strong> Reduces spatial dimensions to single values per channel</p>
+            <p><strong>Input:</strong> 7×7×1280 → <strong>Output:</strong> 1280</p>
+            <p><strong>Parameters:</strong> 0 (no learnable parameters)</p>
+            <p><strong>Purpose:</strong> Prevents overfitting and reduces computational complexity</p>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                This operation significantly reduces the number of parameters compared to flattening.
+            </div>
+        `
+    },
+    {
+        title: "Dropout Layer 1",
+        content: `
+            <p><strong>Function:</strong> Regularization technique to prevent overfitting</p>
+            <p><strong>Dropout Rate:</strong> 20% (0.2)</p>
+            <p><strong>Parameters:</strong> 0 (no learnable parameters)</p>
+            <p><strong>Purpose:</strong> Randomly sets 20% of inputs to zero during training</p>
+            <div class="alert alert-info">
+                <i class="fas fa-shield-alt me-2"></i>
+                Dropout improves generalization by preventing co-adaptation of neurons.
+            </div>
+        `
+    },
+    {
+        title: "Dense Feature Layer",
+        content: `
+            <p><strong>Function:</strong> Combines features for classification</p>
+            <p><strong>Input:</strong> 1280 → <strong>Output:</strong> 128</p>
+            <p><strong>Parameters:</strong> 164,608 (1280×128 + 128 bias)</p>
+            <p><strong>Activation:</strong> ReLU</p>
+            <div class="alert alert-primary">
+                <i class="fas fa-brain me-2"></i>
+                This layer learns to combine MobileNetV2 features for waste classification.
+            </div>
+        `
+    },
+    {
+        title: "Dropout Layer 2",
+        content: `
+            <p><strong>Function:</strong> Additional regularization before final classification</p>
+            <p><strong>Dropout Rate:</strong> 20% (0.2)</p>
+            <p><strong>Parameters:</strong> 0 (no learnable parameters)</p>
+            <p><strong>Purpose:</strong> Final regularization step</p>
+            <div class="alert alert-info">
+                <i class="fas fa-shield-alt me-2"></i>
+                Second dropout layer provides extra protection against overfitting.
+            </div>
+        `
+    },
+    {
+        title: "Classification Output",
+        content: `
+            <p><strong>Function:</strong> Final classification into waste categories</p>
+            <p><strong>Input:</strong> 128 → <strong>Output:</strong> 5 classes</p>
+            <p><strong>Parameters:</strong> 645 (128×5 + 5 bias)</p>
+            <p><strong>Activation:</strong> Softmax (outputs probabilities)</p>
+            <p><strong>Classes:</strong> plastic, organic, metal, glass, paper</p>
+            <div class="alert alert-success">
+                <i class="fas fa-bullseye me-2"></i>
+                Softmax ensures output probabilities sum to 1.0 for confident predictions.
+            </div>
+        `
+    }
+];
+
+function selectLayer(layerIndex) {
+    // Remove active class from all layers
+    document.querySelectorAll('.layer-block').forEach(block => {
+        block.classList.remove('active');
+    });
+
+    // Add active class to selected layer
+    document.querySelector(`[data-layer="${layerIndex}"]`).classList.add('active');
+
+    // Update detail panel
+    const titleElement = document.getElementById('layerDetailTitle');
+    const contentElement = document.getElementById('layerDetailContent');
+
+    titleElement.innerHTML = layerDetails[layerIndex].title;
+    contentElement.innerHTML = layerDetails[layerIndex].content;
+
+    // Animate panel
+    const panel = document.getElementById('layerDetails');
+    panel.style.transform = 'scale(0.98)';
+    panel.style.opacity = '0.8';
+    setTimeout(() => {
+        panel.style.transform = 'scale(1)';
+        panel.style.opacity = '1';
+    }, 150);
+}
+
+// Initialize with first layer selected
+document.addEventListener('DOMContentLoaded', function() {
+    selectLayer(0);
+
+    // Add keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        const currentActive = document.querySelector('.layer-block.active');
+        const allBlocks = document.querySelectorAll('.layer-block');
+        const currentIndex = Array.from(allBlocks).indexOf(currentActive);
+
+        if (e.key === 'ArrowDown' && currentIndex < allBlocks.length - 1) {
+            selectLayer(currentIndex + 1);
+        } else if (e.key === 'ArrowUp' && currentIndex > 0) {
+            selectLayer(currentIndex - 1);
+        }
+    });
+});
+</script>
+{% endblock %}

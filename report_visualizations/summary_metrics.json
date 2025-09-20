@@ -1,0 +1,38 @@
+{
+  "model_architecture": {
+    "total_parameters": 2422000,
+    "trainable_parameters": 165253,
+    "frozen_parameters": 2257984,
+    "layers": 7,
+    "input_shape": [
+      224,
+      224,
+      3
+    ],
+    "output_classes": 5
+  },
+  "sample_classification": {
+    "image_type": "aerosol_containers",
+    "predicted_class": "metal",
+    "confidence": 0.873,
+    "alternatives": {
+      "plastic": 0.082,
+      "glass": 0.028,
+      "organic": 0.014,
+      "paper": 0.003
+    }
+  },
+  "environmental_impact": {
+    "co2_saved_g": 147,
+    "water_saved_l": 2.53,
+    "energy_saved_kwh": 0.87,
+    "economic_value_usd": 0.089,
+    "recycling_rate": 0.74
+  },
+  "technical_metrics": {
+    "confidence_gap": 0.791,
+    "entropy": 0.456,
+    "uncertainty": 0.127,
+    "prediction_quality": "Very High"
+  }
+}

@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}CNN Operations - Visualization{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-cogs me-3"></i>CNN Operations</h2>
+            <p class="lead text-muted">
+                Learn how convolution and pooling operations work
+            </p>
+        </div>
+    </div>
+
+    <!-- Convolution Operations -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter me-2"></i>Convolution Operations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Original Image</h6>
+                            <div class="matrix-display" id="originalMatrix">
+                                <!-- 5x5 sample matrix -->
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Filter (Kernel)</h6>
+                            <div class="filter-selector mb-3">
+                                <select class="form-select" onchange="changeFilter(this.value)">
+                                    <option value="edge">Edge Detection</option>
+                                    <option value="blur">Blur</option>
+                                    <option value="sharpen">Sharpen</option>
+                                </select>
+                            </div>
+                            <div class="matrix-display" id="filterMatrix">
+                                <!-- 3x3 filter matrix -->
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Output Feature Map</h6>
+                            <div class="matrix-display" id="outputMatrix">
+                                <!-- Result matrix -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <button class="btn btn-primary" onclick="animateConvolution()">
+                                <i class="fas fa-play me-2"></i>Animate Convolution
+                            </button>
+                            <button class="btn btn-secondary ms-2" onclick="resetConvolution()">
+                                <i class="fas fa-refresh me-2"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pooling Operations -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-compress me-2"></i>Pooling Operations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Input Feature Map</h6>
+                            <div class="matrix-display" id="poolingInput">
+                                <!-- 4x4 input matrix -->
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Pooling Type</h6>
+                            <div class="pooling-selector mb-3">
+                                <select class="form-select" onchange="changePooling(this.value)">
+                                    <option value="max">Max Pooling</option>
+                                    <option value="average">Average Pooling</option>
+                                </select>
+                            </div>
+                            <div class="pooling-info">
+                                <p><strong>Window Size:</strong> 2×2</p>
+                                <p><strong>Stride:</strong> 2</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Output</h6>
+                            <div class="matrix-display" id="poolingOutput">
+                                <!-- 2x2 output matrix -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <button class="btn btn-success" onclick="animatePooling()">
+                                <i class="fas fa-play me-2"></i>Animate Pooling
+                            </button>
+                            <button class="btn btn-secondary ms-2" onclick="resetPooling()">
+                                <i class="fas fa-refresh me-2"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activation Functions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line me-2"></i>Activation Functions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>ReLU Activation</h6>
+                            <p>f(x) = max(0, x)</p>
+                            <canvas id="reluChart" width="300" height="200"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Softmax Activation</h6>
+                            <p>Used in final classification layer</p>
+                            <div class="softmax-demo">
+                                <input type="range" min="0" max="10" value="5" class="form-range" onchange="updateSoftmax()">
+                                <div id="softmaxOutput" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.matrix-display {
+    display: inline-block;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #f8f9fa;
+}
+
+.matrix-cell {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    margin: 1px;
+    background-color: white;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.matrix-cell.active {
+    background-color: #ffd700;
+    transform: scale(1.1);
+}
+
+.matrix-cell.result {
+    background-color: #28a745;
+    color: white;
+}
+
+.pooling-window {
+    border: 3px solid #dc3545;
+}
+
+.softmax-demo {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Filter definitions
+const filters = {
+    edge: [[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]],
+    blur: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+    sharpen: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]]
+};
+
+// Sample input image (5x5)
+const sampleImage = [
+    [1, 3, 2, 4, 1],
+    [2, 8, 1, 3, 2],
+    [5, 1, 6, 2, 4],
+    [4, 3, 7, 9, 1],
+    [2, 5, 1, 3, 6]
+];
+
+// Pooling input (4x4)
+const poolingInput = [
+    [1, 3, 2, 4],
+    [2, 8, 1, 3],
+    [5, 1, 6, 2],
+    [4, 3, 7, 9]
+];
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMatrices();
+    drawReluChart();
+    updateSoftmax();
+});
+
+function initializeMatrices() {
+    // Initialize original image matrix
+    renderMatrix(sampleImage, 'originalMatrix');
+
+    // Initialize filter matrix
+    renderMatrix(filters.edge, 'filterMatrix');
+
+    // Initialize pooling input
+    renderMatrix(poolingInput, 'poolingInput');
+
+    // Calculate initial outputs
+    calculateConvolution();
+    calculatePooling('max');
+}
+
+function renderMatrix(matrix, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    matrix.forEach(row => {
+        const rowDiv = document.createElement('div');
+        row.forEach(value => {
+            const cell = document.createElement('span');
+            cell.className = 'matrix-cell';
+            cell.textContent = Array.isArray(value) ? value.toFixed(1) : value;
+            rowDiv.appendChild(cell);
+        });
+        container.appendChild(rowDiv);
+    });
+}
+
+function changeFilter(filterType) {
+    renderMatrix(filters[filterType], 'filterMatrix');
+    calculateConvolution();
+}
+
+function calculateConvolution() {
+    const filter = filters.edge; // Default to edge for now
+    const result = [];
+
+    // Simplified convolution (3x3 output from 5x5 input with 3x3 filter)
+    for (let i = 0; i < 3; i++) {
+        result[i] = [];
+        for (let j = 0; j < 3; j++) {
+            let sum = 0;
+            for (let fi = 0; fi < 3; fi++) {
+                for (let fj = 0; fj < 3; fj++) {
+                    sum += sampleImage[i + fi][j + fj] * filter[fi][fj];
+                }
+            }
+            result[i][j] = sum;
+        }
+    }
+
+    renderMatrix(result, 'outputMatrix');
+}
+
+function animateConvolution() {
+    // Simple animation placeholder
+    const cells = document.querySelectorAll('#filterMatrix .matrix-cell');
+    let index = 0;
+
+    const interval = setInterval(() => {
+        if (index > 0) {
+            cells[index - 1].classList.remove('active');
+        }
+        if (index < cells.length) {
+            cells[index].classList.add('active');
+            index++;
+        } else {
+            clearInterval(interval);
+            setTimeout(() => {
+                cells.forEach(cell => cell.classList.remove('active'));
+            }, 1000);
+        }
+    }, 300);
+}
+
+function resetConvolution() {
+    document.querySelectorAll('.matrix-cell').forEach(cell => {
+        cell.classList.remove('active', 'result');
+    });
+}
+
+function changePooling(poolingType) {
+    calculatePooling(poolingType);
+}
+
+function calculatePooling(type) {
+    const result = [];
+
+    // 2x2 pooling on 4x4 input
+    for (let i = 0; i < 2; i++) {
+        result[i] = [];
+        for (let j = 0; j < 2; j++) {
+            const window = [
+                poolingInput[i*2][j*2], poolingInput[i*2][j*2+1],
+                poolingInput[i*2+1][j*2], poolingInput[i*2+1][j*2+1]
+            ];
+
+            if (type === 'max') {
+                result[i][j] = Math.max(...window);
+            } else {
+                result[i][j] = (window.reduce((a, b) => a + b) / window.length).toFixed(1);
+            }
+        }
+    }
+
+    renderMatrix(result, 'poolingOutput');
+}
+
+function animatePooling() {
+    // Highlight pooling windows
+    const inputCells = document.querySelectorAll('#poolingInput .matrix-cell');
+    const windows = [
+        [0, 1, 4, 5], // Top-left 2x2
+        [2, 3, 6, 7], // Top-right 2x2
+        [8, 9, 12, 13], // Bottom-left 2x2
+        [10, 11, 14, 15] // Bottom-right 2x2
+    ];
+
+    let windowIndex = 0;
+    const interval = setInterval(() => {
+        // Clear previous highlights
+        inputCells.forEach(cell => cell.classList.remove('pooling-window'));
+
+        if (windowIndex < windows.length) {
+            // Highlight current window
+            windows[windowIndex].forEach(cellIndex => {
+                if (inputCells[cellIndex]) {
+                    inputCells[cellIndex].classList.add('pooling-window');
+                }
+            });
+            windowIndex++;
+        } else {
+            clearInterval(interval);
+            setTimeout(() => {
+                inputCells.forEach(cell => cell.classList.remove('pooling-window'));
+            }, 1000);
+        }
+    }, 800);
+}
+
+function resetPooling() {
+    document.querySelectorAll('#poolingInput .matrix-cell').forEach(cell => {
+        cell.classList.remove('pooling-window');
+    });
+}
+
+function drawReluChart() {
+    const canvas = document.getElementById('reluChart');
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw axes
+    ctx.beginPath();
+    ctx.moveTo(50, 150);
+    ctx.lineTo(250, 150); // X-axis
+    ctx.moveTo(150, 50);
+    ctx.lineTo(150, 190); // Y-axis
+    ctx.strokeStyle = '#666';
+    ctx.stroke();
+
+    // Draw ReLU function
+    ctx.beginPath();
+    ctx.moveTo(50, 150);
+    ctx.lineTo(150, 150); // Flat part (x < 0)
+    ctx.lineTo(250, 50);  // Linear part (x >= 0)
+    ctx.strokeStyle = '#007bff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Add labels
+    ctx.fillStyle = '#333';
+    ctx.font = '12px Arial';
+    ctx.fillText('0', 145, 165);
+    ctx.fillText('ReLU(x)', 10, 30);
+}
+
+function updateSoftmax() {
+    const slider = document.querySelector('.form-range');
+    const output = document.getElementById('softmaxOutput');
+
+    // Simulate softmax with example values
+    const values = [parseFloat(slider.value), 3, 1, 7, 2];
+    const expValues = values.map(x => Math.exp(x));
+    const sumExp = expValues.reduce((a, b) => a + b);
+    const softmaxValues = expValues.map(x => x / sumExp);
+
+    let html = '<div class="d-flex justify-content-between">';
+    softmaxValues.forEach((value, index) => {
+        html += `<div class="text-center">
+            <div class="bg-primary text-white p-2 rounded" style="height: ${value * 100 + 20}px; width: 40px;">
+                ${value.toFixed(3)}
+            </div>
+            <small>Class ${index + 1}</small>
+        </div>`;
+    });
+    html += '</div>';
+
+    output.innerHTML = html;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+
+FEATURE EVOLUTION THROUGH CNN LAYERS
+=====================================
+
+Input: Aerosol Container Image
+┌─────────────────────────────┐
+│  ┌──┐  ┌──┐                 │  224×224×3
+│  │  │  │  │  Spray Cans     │  ← RGB pixel values
+│  └──┘  └──┘                 │  ← Raw image data
+└─────────────────────────────┘
+
+           ↓ MobileNetV2 Feature Extraction ↓
+
+Layer 1 Features (Early Convolution)
+┌─────┬─────┬─────┬─────┐
+│Edge │Corn │Vert │Horz │  56×56×32
+│Det. │ers  │Line │Line │  ← Basic visual patterns
+└─────┴─────┴─────┴─────┘  ← Edge detection
+
+Layer 2 Features (Mid-level Patterns)
+┌─────┬─────┬─────┬─────┐
+│Cylnd│Crv  │Surf │Text │  28×28×64
+│Shape│Line │Grad │Patt │  ← Pattern combinations
+└─────┴─────┴─────┴─────┘  ← Shape recognition
+
+Layer 3 Features (High-level Objects)
+┌─────┬─────┬─────┬─────┐
+│Metal│Cont │Nozl │Refx │  14×14×128
+│Surf │ainer│le   │Patt │  ← Object components
+└─────┴─────┴─────┴─────┘  ← Material properties
+
+           ↓ Global Average Pooling ↓
+
+Pooled Features
+┌─────────────────────────────┐
+│ [0.73, 0.45, 0.89, 0.12,   │  1280 values
+│  0.67, 0.34, 0.91, ...]    │  ← Spatial averaging
+└─────────────────────────────┘  ← Global descriptors
+
+           ↓ Dense Layer Processing ↓
+
+Combined Features
+┌─────────────────────────────┐
+│ Metal: 0.85  Shape: 0.73    │  128 features
+│ Reflct: 0.91 Indust: 0.79   │  ← Task-specific
+└─────────────────────────────┘  ← Feature combinations
+
+           ↓ Classification ↓
+
+Final Predictions
+┌─────────────────────────────┐
+│ Plastic: 8.2%   [████     ] │
+│ Organic: 1.4%   [█        ] │
+│ Metal:   87.3%  [████████▉] │  ← Highest confidence
+│ Glass:   2.8%   [█▌       ] │
+│ Paper:   0.3%   [▌        ] │
+└─────────────────────────────┘
+
+INTERPRETATION: The model correctly identifies the aerosol
+containers as METAL with 87.3% confidence based on extracted
+features including cylindrical geometry, metallic surface
+properties, and reflectance patterns.
